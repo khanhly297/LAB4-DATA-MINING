@@ -91,5 +91,68 @@ plt.title('ROC Curve - 70:30 Split')
 plt.legend()
 plt.show()
 
+# ==========================================
+# YÊU CẦU 2 & 4: K-FOLD (K=10, TRAIN 9 PHẦN)
+# ==========================================
+print("\n--- ĐANG TÍNH TOÁN VỚI K-FOLD (K=10) ---")
+kf = KFold(n_splits=10, shuffle=True, random_state=42)
+
+for name, model in models.items():
+    # cross_val_predict thực hiện lặp 10 lần, mỗi lần train trên 9 phần (K-1)
+    y_pred_cv = cross_val_predict(model, X_scaled, y, cv=kf)
+    
+    # Tính các chỉ số trung bình (Yêu cầu 4)
+    acc_cv = accuracy_score(y, y_pred_cv)
+    prec_cv = precision_score(y, y_pred_cv)
+    f1_cv = f1_score(y, y_pred_cv)
+    
+    results_list.append({
+        "Model": name, "Method": "K-Fold (k=10)",
+        "Accuracy": acc_cv, "Precision": prec_cv, "F1": f1_cv
+    })
+    
+    # Xuất Confusion Matrix cho K-Fold
+    print(f"\nConfusion Matrix [{name} - K-Fold]:\n", confusion_matrix(y, y_pred_cv))
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.naive_bayes import GaussianNB
+from sklearn.neural_network import MLPClassifier
+from sklearn.svm import SVC
+from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, f1_score, roc_curve, auc
+import tensorflow as tf
+from tensorflow.keras.models import Model, Sequential
+from tensorflow.keras.layers import Input, Dense
+
+# ==========================================
+# 1. TẢI VÀ TIỀN XỬ LÝ DỮ LIỆU
+# ==========================================
+print("Đang xử lý dữ liệu...")
+df = pd.read_csv('data.csv')
+
+# Bỏ các cột không cần thiết
+if 'id' in df.columns:
+    df = df.drop(['id'], axis=1)
+if 'Unnamed: 32' in df.columns:
+    df = df.drop(['Unnamed: 32'], axis=1)
+
+# Mã hóa nhãn: M (Malignant/Ác tính) -> 1, B (Benign/Lành tính) -> 0
+le = LabelEncoder()
+df['diagnosis'] = le.fit_transform(df['diagnosis'])
+
+X = df.drop('diagnosis', axis=1).values
+y = df['diagnosis'].values
+
+# Chia dữ liệu 70:30
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42, stratify=y)
+
+# Chuẩn hóa dữ liệu
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
 
 
