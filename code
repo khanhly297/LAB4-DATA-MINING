@@ -205,6 +205,61 @@ tl_model = Sequential([
 tl_model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 tl_model.fit(X_train_scaled, y_train, epochs=100, batch_size=16, verbose=0)
 
+# ==========================================
+# 4. ĐÁNH GIÁ MÔ HÌNH & XUẤT KẾT QUẢ
+# ==========================================
+models = {
+    'Bayesian (Naive Bayes)': bbn_model,
+    'Backpropagation (MLP)': mlp_model,
+    'SVM': svm_model
+}
+
+results = []
+plt.figure(figsize=(10, 8))
+
+# Hàm phụ để lấy xác suất và nhãn dự đoán cho TensorFlow và Sklearn
+def get_preds(model, X_test, is_tf=False):
+    if is_tf:
+        y_prob = model.predict(X_test, verbose=0).ravel()
+        y_pred = (y_prob > 0.5).astype(int)
+    else:
+        y_prob = model.predict_proba(X_test)[:, 1]
+        y_pred = model.predict(X_test)
+    return y_pred, y_prob
+
+# Đánh giá từng mô hình
+all_models = list(models.items()) + [('Backprop + Transfer Learning', tl_model)]
+
+fig_cm, axes = plt.subplots(2, 2, figsize=(12, 10))
+axes = axes.flatten()
+
+for idx, (name, model) in enumerate(all_models):
+    is_tf = (name == 'Backprop + Transfer Learning')
+    y_pred, y_prob = get_preds(model, X_test_scaled, is_tf)
+    
+    # Tính các chỉ số
+    acc = accuracy_score(y_test, y_pred)
+    prec = precision_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred)
+    
+    results.append({'Model': name, 'Accuracy': acc, 'Precision': prec, 'F1-Score': f1})
+    
+    # Confusion Matrix
+    cm = confusion_matrix(y_test, y_pred)
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=axes[idx])
+    axes[idx].set_title(f'Confusion Matrix: {name}')
+    axes[idx].set_xlabel('Predicted')
+    axes[idx].set_ylabel('Actual')
+    
+    # ROC Curve Data
+    fpr, tpr, _ = roc_curve(y_test, y_prob)
+    roc_auc = auc(fpr, tpr)
+    
+    # Plot ROC trên figure chính
+    plt.figure(1)
+    plt.plot(fpr, tpr, lw=2, label=f'{name} (AUC = {roc_auc:.3f})')
+
+
 
 
 
