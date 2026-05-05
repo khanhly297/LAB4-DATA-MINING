@@ -8,3 +8,24 @@ from sklearn.model_selection import train_test_split, KFold, cross_val_predict
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import (confusion_matrix, accuracy_score, precision_score, 
                              f1_score, roc_curve, auc)
+# Thư viện các mô hình theo yêu cầu
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.naive_bayes import GaussianNB, BernoulliNB
+
+# ==========================================
+# 0. ĐỌC VÀ TIỀN XỬ LÝ DỮ LIỆU
+# ==========================================
+df = pd.read_csv('data.csv')
+
+# Xóa cột thừa và mã hóa nhãn (M=1, B=0)
+X = df.drop(['id', 'diagnosis', 'Unnamed: 32'], axis=1, errors='ignore')
+y = df['diagnosis'].map({'M': 1, 'B': 0})
+
+# Chuẩn hóa dữ liệu để các mô hình (đặc biệt là Bayes) hoạt động chính xác
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Danh sách lưu kết quả để lập bảng so sánh (Yêu cầu 4)
+results_list = []
+
