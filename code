@@ -154,5 +154,58 @@ scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
+# ==========================================
+# 2. KHỞI TẠO VÀ HUẤN LUYỆN CÁC MÔ HÌNH CƠ BẢN
+# ==========================================
+print("Đang huấn luyện các mô hình cơ bản...")
+
+# A. Bayesian Network (Sử dụng Gaussian Naive Bayes làm đại diện)
+bbn_model = GaussianNB()
+bbn_model.fit(X_train_scaled, y_train)
+
+# B. Backpropagation (Multi-Layer Perceptron)
+mlp_model = MLPClassifier(hidden_layer_sizes=(32, 16), max_iter=1000, random_state=42)
+mlp_model.fit(X_train_scaled, y_train)
+
+# C. Support Vector Machine (SVM)
+svm_model = SVC(kernel='rbf', probability=True, random_state=42)
+svm_model.fit(X_train_scaled, y_train)
+
+# ==========================================
+# 3. BACKPROPAGATION + TRANSFER LEARNING
+# ==========================================
+print("Đang huấn luyện Autoencoder và áp dụng Transfer Learning...")
+input_dim = X_train_scaled.shape[1]
+
+# Bước 3.1: Pre-training với Autoencoder (Học không giám sát)
+input_layer = Input(shape=(input_dim,))
+encoded = Dense(16, activation='relu')(input_layer)
+encoded = Dense(8, activation='relu')(encoded)
+decoded = Dense(16, activation='relu')(encoded)
+decoded = Dense(input_dim, activation='linear')(decoded)
+
+autoencoder = Model(inputs=input_layer, outputs=decoded)
+autoencoder.compile(optimizer='adam', loss='mse')
+autoencoder.fit(X_train_scaled, X_train_scaled, epochs=50, batch_size=16, verbose=0)
+
+# Bước 3.2: Transfer Learning (Sử dụng Encoder làm feature extractor)
+encoder = Model(inputs=input_layer, outputs=encoded)
+
+# Đóng băng các trọng số của encoder (Freeze layers) để giữ lại tri thức đã học
+for layer in encoder.layers:
+    layer.trainable = False
+
+# Xây dựng mô hình phân lớp sử dụng thuật toán Backpropagation phần ngọn
+tl_model = Sequential([
+    encoder,
+    Dense(8, activation='relu'),
+    Dense(1, activation='sigmoid') # Phân lớp nhị phân
+])
+
+tl_model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+tl_model.fit(X_train_scaled, y_train, epochs=100, batch_size=16, verbose=0)
+
+
+
 
 
