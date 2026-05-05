@@ -49,5 +49,47 @@ models = {
     # Binarize=0.0 chuyển dữ liệu đã scale về dạng 0 và 1
     "Bayes (Binomial)": BernoulliNB(binarize=0.0)
 }
+# ==========================================
+# YÊU CẦU 1 & 4: CHIA 70:30 VÀ ĐÁNH GIÁ
+# ==========================================
+X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.3, random_state=42)
+
+plt.figure(figsize=(10, 7))
+print("--- ĐANG TÍNH TOÁN VỚI PHƯƠNG PHÁP CHIA 70:30 ---")
+
+for name, model in models.items():
+    # Huấn luyện mô hình
+    model.fit(X_train, y_train)
+    
+    # Dự đoán
+    y_pred = model.predict(X_test)
+    y_prob = model.predict_proba(X_test)[:, 1] if hasattr(model, "predict_proba") else None
+    
+    # Tính các chỉ số (Yêu cầu 4)
+    acc = accuracy_score(y_test, y_pred)
+    prec = precision_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred)
+    
+    results_list.append({
+        "Model": name, "Method": "Hold-out 70:30",
+        "Accuracy": acc, "Precision": prec, "F1": f1
+    })
+    
+    # Xuất Confusion Matrix (Yêu cầu 4)
+    print(f"\nConfusion Matrix [{name} - 70:30]:\n", confusion_matrix(y_test, y_pred))
+    
+    # Vẽ đường cong ROC (Yêu cầu 4)
+    if y_prob is not None:
+        fpr, tpr, _ = roc_curve(y_test, y_prob)
+        plt.plot(fpr, tpr, label=f"{name} (AUC={auc(fpr, tpr):.2f})")
+
+# Hoàn thiện biểu đồ ROC
+plt.plot([0, 1], [0, 1], 'k--')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve - 70:30 Split')
+plt.legend()
+plt.show()
+
 
 
